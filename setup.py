@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='netatmo-shut-the-door',
+    name='netatmo-shut-the-window',
     version='1.0.0',
     author_email='javier.ramirez.leiva0@gmail.com',
     description='CLI/Pip package for netatmo able to retrieve temperature from a netatmo room',
