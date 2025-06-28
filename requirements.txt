@@ -1,0 +1,4 @@
+requests
+pymeteosource
+geopy
+slack_bolt
