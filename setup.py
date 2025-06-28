@@ -14,6 +14,6 @@ setup(
     },
     # Include additional package data (e.g., non-Python files)
     package_data={
-        'configuration': ['configuration/*'],
+        'netatmo': ['configuration/*.json'],
     },
 )
