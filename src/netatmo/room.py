@@ -38,4 +38,4 @@ class Room:
         return f"Room \"{self._roomName}\" [{self._roomID}] in \"{self._homeName}\" [{self._homeID}] has a temperature of \"{self._temperature}\" degrees Celsius and a set temperature of \"{self._temperatureSet}\" degrees Celsius"
 
     def toShortString(self) -> str:
-        return f"Room \"{self._roomName}\" in \"{self._homeName}\": \"{self._temperature}\" °C"
+        return f"Room \"{self._roomName}\" in \"{self._homeName}\": {self._temperature}°C"
