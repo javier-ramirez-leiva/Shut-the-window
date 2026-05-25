@@ -1,6 +1,7 @@
 import time
 import re
 import asyncio
+from typing import Any, Optional
 
 from netatmo.room import Room
 from netatmo.netatmo_client import NetatmoClient
@@ -40,9 +41,9 @@ class Daemon:
         time.sleep(self._timeout * 60)
         while True:
             rooms = self._netatmoClient.listRooms()
-            message = None
             outsideTemp = self._weatherWrapper.getTemperature()
             for room in rooms:
+                message = None
                 print(f"Checking room {room.roomName} in {room.homeName}")
                 if room.roomID not in self._windowClosedMap:
                     continue
@@ -74,16 +75,31 @@ class Daemon:
 
     def _getTrehsholdTemperatures(self, room: Room) -> list[float]:
         thresholds = self._daemonConfig.get("alert", {}).get("temp_thresholds", {})
-        if room.roomID in thresholds:
-            return [thresholds[room.roomID].get("open"), thresholds[room.roomID].get("close")]
-        else:
+        thresholdConfig = self._resolveRoomThresholds(thresholds, room)
+        if thresholdConfig is None:
             return [0, 0]
-        
-       
-         
-    
 
+        thresholdOpen = self._toFloat(thresholdConfig.get("open"), 0)
+        thresholdClose = self._toFloat(thresholdConfig.get("close"), 0)
+        return [thresholdOpen, thresholdClose]
 
+    def _resolveRoomThresholds(self, thresholds: dict[str, Any], room: Room) -> Optional[dict[str, Any]]:
+        roomKeys = [
+            room.roomID,
+            room.roomName,
+            f"{room.homeName}/{room.roomName}",
+            f"{room.homeID}/{room.roomID}",
+        ]
+        for key in roomKeys:
+            if key in thresholds:
+                return thresholds[key]
+        return None
 
-
+    def _toFloat(self, value: Any, defaultValue: float) -> float:
+        if value is None:
+            return defaultValue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return defaultValue
         
