@@ -20,7 +20,7 @@ class WeatherWrapper:
         
 
 
-    def getTemperature(self) -> int:
+    def getTemperature(self) -> float:
 
         meteosource = Meteosource(self._apiKey, tiers.FREE)
 
