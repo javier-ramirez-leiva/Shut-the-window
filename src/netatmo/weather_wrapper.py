@@ -40,7 +40,10 @@ class WeatherWrapper:
         # Extract temperature
         return current_hour['temperature']
 
+    @property
+    def location(self) -> str:
+        return self._location
+
     def toString(self) -> str:
         temperature = self.getTemperature()
         return f"Current temperature in {self._location}: {temperature}°C"
-

@@ -23,10 +23,13 @@ class Daemon:
         self._windowClosedMap = {}
 
     def getStatusMessage(self) -> str:
-        msg = self._weatherWrapper.toString() + "\n\n"
-        rooms = self._netatmoClient.listRooms()
+        rooms, outsideTemp = self._fetchCurrentData()
+        self._refreshWindowStatus(rooms, outsideTemp)
+        msg = f"Current temperature in {self._weatherWrapper.location}: {outsideTemp}°C\n\n"
 
         for room in rooms:
+            if room.roomID not in self._windowClosedMap:
+                continue
             msg += room.toShortString() + ". Window should be "
             msg +=  "closed" if self._windowClosedMap[room.roomID] else "open"
 
@@ -38,22 +41,20 @@ class Daemon:
         statusMessage = self.getStatusMessage()
         print(f"Sending status message: {statusMessage}")
         self._app.client.chat_postMessage(channel=self._channelID, text=self.getStatusMessage())
-        time.sleep(self._timeout * 60)
         while True:
-            rooms = self._netatmoClient.listRooms()
-            outsideTemp = self._weatherWrapper.getTemperature()
+            rooms, outsideTemp = self._fetchCurrentData()
             for room in rooms:
                 message = None
                 print(f"Checking room {room.roomName} in {room.homeName}")
                 if room.roomID not in self._windowClosedMap:
                     continue
-                thresholdOpen, thresholdClose = self._getTrehsholdTemperatures(room)
-                if room.temperature > (outsideTemp + thresholdOpen) and self._windowClosedMap[room.roomID] == True:
-                    self._windowClosedMap[room.roomID] = False
-                    message = f"*Open the window in {room.roomName} in {room.homeName}!*"
-                elif room.temperature < (outsideTemp - thresholdClose) and self._windowClosedMap[room.roomID] == False:
-                    self._windowClosedMap[room.roomID] = True
-                    message = f"*Close the window in {room.roomName} in {room.homeName}!*"
+                wasWindowClosed = self._windowClosedMap[room.roomID]
+                shouldWindowBeClosed = self._computeWindowClosedStatus(room, outsideTemp, wasWindowClosed)
+                self._windowClosedMap[room.roomID] = shouldWindowBeClosed
+
+                if wasWindowClosed != shouldWindowBeClosed:
+                    action = "Close" if shouldWindowBeClosed else "Open"
+                    message = f"*{action} the window in {room.roomName} in {room.homeName}!*"
 
                 if message is not None:
                     print(f"Sending message: {message}")
@@ -72,6 +73,26 @@ class Daemon:
             if room.homeID in self._ignore or room.roomID in self._ignore or room.homeName in self._ignore or room.roomName in self._ignore:
                 continue
             self._windowClosedMap[room.roomID] = room.temperature < outsideTemp
+
+    def _fetchCurrentData(self) -> tuple[list[Room], float]:
+        rooms = self._netatmoClient.listRooms()
+        outsideTemp = self._weatherWrapper.getTemperature()
+        return rooms, outsideTemp
+
+    def _refreshWindowStatus(self, rooms: list[Room], outsideTemp: float):
+        for room in rooms:
+            if room.roomID not in self._windowClosedMap:
+                continue
+            currentWindowClosed = self._windowClosedMap[room.roomID]
+            self._windowClosedMap[room.roomID] = self._computeWindowClosedStatus(room, outsideTemp, currentWindowClosed)
+
+    def _computeWindowClosedStatus(self, room: Room, outsideTemp: float, currentWindowClosed: bool) -> bool:
+        thresholdOpen, thresholdClose = self._getTrehsholdTemperatures(room)
+        if currentWindowClosed and room.temperature > (outsideTemp + thresholdOpen):
+            return False
+        if (not currentWindowClosed) and room.temperature < (outsideTemp - thresholdClose):
+            return True
+        return currentWindowClosed
 
     def _getTrehsholdTemperatures(self, room: Room) -> list[float]:
         thresholds = self._daemonConfig.get("alert", {}).get("temp_thresholds", {})
