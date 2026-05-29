@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import json
 import os
 import re
@@ -9,7 +10,8 @@ from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 from netatmo.netatmo_client import NetatmoClient
-from netatmo.weather_wrapper import WeatherWrapper
+from netatmo.pymeteosource_weather_wrapper import PyMeteoSourceWeatherWrapper
+from netatmo.pyowm_weather_wrapper import PyOwmWeatherWrapper
 from netatmo.daemon import Daemon
 
 parser = argparse.ArgumentParser(description='Netatmo CLI - Choose one of the available modes to interact with your Netatmo devices.')
@@ -57,7 +59,10 @@ def _createClient() -> NetatmoClient:
 
 def launchDaemon():
     netatmoClient = _createClient()
-    weatherWrapper = WeatherWrapper(config["weather"]["location"],config["weather"]["meteosourceAPIKey"])
+    if config["weather"]["client"] == "owm":
+        weatherWrapper = PyOwmWeatherWrapper(config["weather"]["location"],config["weather"]["owmAPIKey"])
+    else:
+        weatherWrapper = PyMeteoSourceWeatherWrapper(config["weather"]["location"],config["weather"]["meteosourceAPIKey"])
 
     global daemon
     daemon = Daemon(app, netatmoClient, weatherWrapper, daemonConfig)
@@ -84,11 +89,14 @@ def listRooms():
 
 def printStatus():
 
-    weatherWrapper = WeatherWrapper(config["weather"]["location"],config["weather"]["meteosourceAPIKey"])
+    pyMeteoSourceWeatherWrapper = PyMeteoSourceWeatherWrapper(config["weather"]["location"],config["weather"]["meteosourceAPIKey"])
+    message = pyMeteoSourceWeatherWrapper.toString()
+    print(f"PyMeteoSourceWeatherWrapper: {message}")
+    print()
 
-    message = weatherWrapper.toString()
-
-    print(message)
+    pyOwmWeatherWrapper = PyOwmWeatherWrapper(config["weather"]["location"],config["weather"]["owmAPIKey"])
+    message = pyOwmWeatherWrapper.toString()
+    print(f"PyOwmWeatherWrapper: {message}")
     print()
 
     netatmoClient = _createClient()
