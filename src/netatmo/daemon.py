@@ -49,7 +49,12 @@ class Daemon:
                 if room.roomID not in self._windowClosedMap:
                     continue
                 wasWindowClosed = self._windowClosedMap[room.roomID]
+                print()
+                print(f"Current window status: {'closed' if wasWindowClosed else 'open'}")
                 shouldWindowBeClosed = self._computeWindowClosedStatus(room, outsideTemp, wasWindowClosed)
+                print(f"Room temperature: {room.temperature}°C, Outside temperature: {outsideTemp}°C")
+                print(f"Computed window status: {'closed' if shouldWindowBeClosed else 'open'}")
+                print()
                 self._windowClosedMap[room.roomID] = shouldWindowBeClosed
 
                 if wasWindowClosed != shouldWindowBeClosed:
