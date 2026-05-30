@@ -32,6 +32,7 @@ configurationFilePath = os.path.join(configurationFolderPath, 'configuration.jso
 daemonConfigurationFilePath = os.path.join(configurationFolderPath, 'daemon.json')
 
 daemon = None
+seen_events = set()
 
 with open(configurationFilePath, 'r') as config_file:
     config = json.load(config_file)
@@ -77,6 +78,11 @@ def launchDaemon():
 
 @app.message(re.compile(daemonConfig["status_keyword"]))
 def handle_status_command(message, say):
+    event_id = message.get("client_msg_id") or message.get("ts")
+    if event_id in seen_events:
+        return  # ignore duplicate
+    seen_events.add(event_id)
+    print(f"Received status command: {daemonConfig['status_keyword']}")
     say(daemon.getStatusMessage())
 
 
