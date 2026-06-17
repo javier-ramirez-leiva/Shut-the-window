@@ -3,3 +3,4 @@ src/netatmo_shut_the_window.egg-info
 __pycache__
 src/netatmo/configuration/configuration.json
 src/netatmo/configuration/daemon.json
+src/netatmo/configuration/test_temperature.json

@@ -61,8 +61,6 @@ class Daemon:
                     action = "Close" if shouldWindowBeClosed else "Open"
                     message = f"*{action} the window in {room.roomName} in {room.homeName}!*"
 
-                self._app.client.chat_postMessage(channel=self._channelID, text=statusMessage)
-
                 if message is not None:
                     print(f"Sending message: {message}")
                     self._app.client.chat_postMessage(channel=self._channelID, text=message)

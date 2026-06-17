@@ -12,6 +12,7 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 from netatmo.netatmo_client import NetatmoClient
 from netatmo.pymeteosource_weather_wrapper import PyMeteoSourceWeatherWrapper
 from netatmo.pyowm_weather_wrapper import PyOwmWeatherWrapper
+from netatmo.test_weather_wrapper import TestWeatherWrapper
 from netatmo.daemon import Daemon
 
 parser = argparse.ArgumentParser(description='Netatmo CLI - Choose one of the available modes to interact with your Netatmo devices.')
@@ -62,8 +63,10 @@ def launchDaemon():
     netatmoClient = _createClient()
     if config["weather"]["client"] == "owm":
         weatherWrapper = PyOwmWeatherWrapper(config["weather"]["location"],config["weather"]["owmAPIKey"])
-    else:
+    elif config["weather"]["client"] == "meteosource":
         weatherWrapper = PyMeteoSourceWeatherWrapper(config["weather"]["location"],config["weather"]["meteosourceAPIKey"])
+    elif config["weather"]["client"] == "test":
+        weatherWrapper = TestWeatherWrapper(config["weather"]["location"],config["weather"]["testAPIKey"])
 
     global daemon
     daemon = Daemon(app, netatmoClient, weatherWrapper, daemonConfig)
